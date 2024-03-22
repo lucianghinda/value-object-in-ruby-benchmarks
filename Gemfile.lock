@@ -1,0 +1,18 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    benchmark-ips (2.13.0)
+    benchmark-memory (0.2.0)
+      memory_profiler (~> 1)
+    memory_profiler (1.0.1)
+
+PLATFORMS
+  arm64-darwin-23
+  ruby
+
+DEPENDENCIES
+  benchmark-ips
+  benchmark-memory
+
+BUNDLED WITH
+   2.5.6
