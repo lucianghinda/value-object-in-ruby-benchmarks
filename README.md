@@ -257,3 +257,69 @@ Comparison:
 Positional arguments:    26834.9 i/s - same-ish: difference falls within error
 Constructor keywords:    26794.4 i/s - same-ish: difference falls within error
 ```
+
+## Comparing creating new objects with small number of attributes
+
+In these tests I run creating new objects with 6 attributes.
+
+I compared Data.define with Struct, OpenStruct, custom class with positional arguments and custom class with keyword arguments.
+
+The tests are done only with `ips` and `bmbm`. Did not do a memory test becuase I did not wanted to try to replicate in the custom class the same logic that Data.define or Struct can offer.
+
+### Benchamrk with `bmbm`
+
+```bash
+Creating a new object - Benchmark with bmbm - small numbers
+Rehearsal -------------------------------------------------------
+Struct - positional   0.000003   0.000000   0.000003 (  0.000002)
+Struct - keywords     0.000002   0.000000   0.000002 (  0.000002)
+Data - positional     0.000002   0.000000   0.000002 (  0.000002)
+Data - keywords       0.000002   0.000000   0.000002 (  0.000001)
+OpenStruct.new        0.000020   0.000000   0.000020 (  0.000020)
+Custom - positional   0.000002   0.000001   0.000003 (  0.000002)
+Custom - keywords     0.000002   0.000000   0.000002 (  0.000001)
+---------------------------------------------- total: 0.000034sec
+
+                          user     system      total        real
+Struct - positional   0.000001   0.000001   0.000002 (  0.000001)
+Struct - keywords     0.000001   0.000001   0.000002 (  0.000001)
+Data - positional     0.000001   0.000000   0.000001 (  0.000002)
+Data - keywords       0.000001   0.000000   0.000001 (  0.000001)
+OpenStruct.new        0.000015   0.000000   0.000015 (  0.000015)
+Custom - positional   0.000001   0.000000   0.000001 (  0.000001)
+Custom - keywords     0.000001   0.000000   0.000001 (  0.000001)
+```
+
+### Benchmark with `ips`
+
+```bash
+Creating a new object - Benchmark with ips - small numbers
+ruby 3.3.0 (2023-12-25 revision 5124f9ac75) [arm64-darwin23]
+Warming up --------------------------------------
+ Struct - positional   905.029k i/100ms
+   Struct - keywords   463.944k i/100ms
+   Data - positional   335.454k i/100ms
+     Data - keywords   486.978k i/100ms
+      OpenStruct.new    10.706k i/100ms
+ Custom - positional   802.961k i/100ms
+   Custom - keywords   475.091k i/100ms
+Calculating -------------------------------------
+ Struct - positional      8.766M (± 0.1%) i/s -     44.346M in   5.059002s
+   Struct - keywords      4.565M (± 0.3%) i/s -     23.197M in   5.081195s
+   Data - positional      3.332M (± 0.2%) i/s -     16.773M in   5.033458s
+     Data - keywords      4.818M (± 0.2%) i/s -     24.349M in   5.053850s
+      OpenStruct.new    107.602k (± 1.6%) i/s -    546.006k in   5.075550s
+ Custom - positional      7.757M (± 0.3%) i/s -     39.345M in   5.072337s
+   Custom - keywords      4.713M (± 0.5%) i/s -     23.755M in   5.040592s
+
+Comparison:
+ Struct - positional:  8765862.3 i/s
+ Custom - positional:  7756859.0 i/s - 1.13x  slower
+     Data - keywords:  4817919.9 i/s - 1.82x  slower
+   Custom - keywords:  4712787.7 i/s - 1.86x  slower
+   Struct - keywords:  4565350.1 i/s - 1.92x  slower
+   Data - positional:  3332250.2 i/s - 2.63x  slower
+      OpenStruct.new:   107602.1 i/s - 81.47x  slower
+```
+
+
