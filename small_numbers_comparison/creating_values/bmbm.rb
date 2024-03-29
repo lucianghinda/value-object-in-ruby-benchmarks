@@ -59,11 +59,11 @@ Benchmark.bmbm do |x|
     OpenStruct.new(**keys_and_values)
   end
 
-  x.report("Custom - positional") do
+  x.report("PORO - positional") do
     MyValueObjectWithPositionalArgs.new(*values)
   end
 
-  x.report("Custom - keywords") do
+  x.report("PORO - keywords") do
     MyValueObjectWithKeywordArgs.new(**keys_and_values)
   end
 end

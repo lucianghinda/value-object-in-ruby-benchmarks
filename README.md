@@ -26,6 +26,30 @@ The benchmark is focused on benchmarking the keyword arguments.
 
 ### Creating Values
 
+Having defines the following keys and values:
+
+```ruby
+keys = 1000.times.map { |i| "key#{i}".to_sym }
+values = 1000.times.map { |i| "value#{i}" }
+keys_and_values = Hash[keys.zip(values)]
+```
+
+The creation benchmarks are testing the following code:
+
+```ruby
+DataStruct = Struct.new(*keys, keyword_init: true)
+DataStruct.new(**keys_and_values)
+
+# vs
+
+DataDefine = Data.define(*keys)
+DataDefine.new(**keys_and_values)
+
+# vs
+
+OpenStruct.new(**keys_and_values)
+```
+
 #### Benchmark with `bmbm`
 
 This benchmark is run with Ruby default benchmark using `bmbm`
@@ -91,6 +115,31 @@ Comparison:
 
 ### Accessing Attributes
 
+Having the following data defined:
+
+```ruby
+keys = 1000.times.map { |i| "key#{i}".to_sym }
+values = 1000.times.map { |i| "value#{i}" }
+keys_and_values = Hash[keys.zip(values)]
+```
+
+And then defining the following structures:
+
+```ruby
+BigDataS = Struct.new(*keys, keyword_init: true)
+BigDataD = Data.define(*keys)
+```
+
+The benchmarks are comparing:
+
+```ruby
+keys.each { struct_object.send(_1) }
+
+keys.each { data_object.send(_1) }
+
+keys.each { opens_struct_object.send(_1) }
+```
+
 #### Benchmark with `bmbm`
 
 This benchmark is run with Ruby default benchmark using `bmbm`
@@ -131,9 +180,35 @@ Comparison:
           OpenStruct:    13474.6 i/s - 2.13x  slower
 ```
 
-## Comparing Data.define
+## Data.define - benchmarks
 
 ### Comparing multiple ways to create a new object
+
+Having the following data specified:
+
+```ruby
+keys = 1000.times.map { |i| "key#{i}".to_sym }
+values = 1000.times.map { |i| "value#{i}" }
+keys_and_values = Hash[keys.zip(values)]
+
+DataDefine = Data.define(*keys)
+```
+
+The benchmarks are comparing the following code:
+
+```ruby
+# Keyword arguments
+DataDefine.new(**keys_and_values)
+
+# Positional arguments
+DataDefine.new(*values)
+
+# Constructor method
+DataDefine[*values]
+
+# Constructor keywords
+DataDefine[**keys_and_values]
+```
 
 #### Benchmark with `bmbm`
 
@@ -211,7 +286,39 @@ Constructor keywords:      36792 allocated - same
 
 ### Comparing accessing data from objects created differently
 
-There is no difference in accessing attributes depending on how the object was created.
+Taking in consideration the following data :
+
+```ruby
+keys = 1000.times.map { |i| "key#{i}".to_sym }
+values = 1000.times.map { |i| "value#{i}" }
+keys_and_values = Hash[keys.zip(values)]
+```
+
+And creating the following objects:
+
+```ruby
+DataDefine = Data.define(*keys)
+keyword_args = DataDefine.new(**keys_and_values)
+positional_args = DataDefine.new(*values)
+constructor_method = DataDefine[*values]
+constructor_with_keyword_args = DataDefine[**keys_and_values]
+```
+
+The benchmarks are comparing the following code:
+
+```ruby
+#Keyword arguments
+keys.each { keyword_args.send(_1) }
+
+#Positional arguments
+keys.each { positional_args.send(_1) }
+
+#Constructor method
+keys.each { constructor_method.send(_1) }
+
+#Constructor keywords
+keys.each { constructor_with_keyword_args.send(_1) }
+```
 
 #### Benchmark with `bmbm`
 
@@ -262,32 +369,100 @@ Constructor keywords:    26794.4 i/s - same-ish: difference falls within error
 
 In these tests I run creating new objects with 6 attributes.
 
-I compared Data.define with Struct, OpenStruct, custom class with positional arguments and custom class with keyword arguments.
+I compared `Data.define` with `Struct`, `OpenStruct`, plain Ruby object with positional arguments and plain Ruby object with keyword arguments.
 
-The tests are done only with `ips` and `bmbm`. Did not do a memory test becuase I did not wanted to try to replicate in the custom class the same logic that Data.define or Struct can offer.
+The tests are done only with `ips` and `bmbm`.
+Did not do a memory test becuase I did not wanted to try to replicate in the custom class the same logic that `Data.define` or `Struct` can offer.
+
+Having defined the following data:
+
+```ruby
+keys = [:key1, :key2, :key3, :key4, :key5, :key6]
+values = 6.times.map { |i| "value#{i}" }
+keys_and_values = Hash[keys.zip(values)]
+```
+
+And the following classes:
+
+```ruby
+DataStructKeyword = Struct.new(*keys, keyword_init: true)
+DataStructPositional = Struct.new(*keys)
+DataDefine = Data.define(*keys)
+
+class MyValueObjectWithKeywordArgs
+  attr_reader :key1, :key2, :key3, :key4, :key5, :key6
+
+  def initialize(key1:, key2:, key3:, key4:, key5:, key6:)
+    @key1 = key1
+    @key2 = key2
+    @key3 = key3
+    @key4 = key4
+    @key5 = key5
+    @key6 = key6
+  end
+end
+
+class MyValueObjectWithPositionalArgs
+  attr_reader :key1, :key2, :key3, :key4, :key5, :key6
+
+  def initialize(key1, key2, key3, key4, key5, key6)
+    @key1 = key1
+    @key2 = key2
+    @key3 = key3
+    @key4 = key4
+    @key5 = key5
+    @key6 = key6
+  end
+end
+```
+
+The benchmarks will compare the following code:
+
+```ruby
+# Struct - positional
+DataStructPositional.new(*values)
+
+# Struct - keywords
+DataStructKeyword.new(**keys_and_values)
+
+# Data - positional
+DataDefine.new(*values)
+
+# Data - keywords
+DataDefine.new(**keys_and_values)
+
+# OpenStruct.new
+OpenStruct.new(**keys_and_values)
+
+# PORO - positional
+MyValueObjectWithPositionalArgs.new(*values)
+
+# PORO - keywords
+MyValueObjectWithKeywordArgs.new(**keys_and_values)
+```
 
 ### Benchamrk with `bmbm`
 
 ```bash
 Creating a new object - Benchmark with bmbm - small numbers
 Rehearsal -------------------------------------------------------
-Struct - positional   0.000003   0.000000   0.000003 (  0.000002)
+Struct - positional   0.000003   0.000001   0.000004 (  0.000002)
 Struct - keywords     0.000002   0.000000   0.000002 (  0.000002)
-Data - positional     0.000002   0.000000   0.000002 (  0.000002)
+Data - positional     0.000002   0.000001   0.000003 (  0.000004)
 Data - keywords       0.000002   0.000000   0.000002 (  0.000001)
-OpenStruct.new        0.000020   0.000000   0.000020 (  0.000020)
-Custom - positional   0.000002   0.000001   0.000003 (  0.000002)
-Custom - keywords     0.000002   0.000000   0.000002 (  0.000001)
----------------------------------------------- total: 0.000034sec
+OpenStruct.new        0.000019   0.000001   0.000020 (  0.000019)
+PORO - positional     0.000002   0.000000   0.000002 (  0.000002)
+PORO - keywords       0.000001   0.000001   0.000002 (  0.000002)
+---------------------------------------------- total: 0.000035sec
 
                           user     system      total        real
-Struct - positional   0.000001   0.000001   0.000002 (  0.000001)
-Struct - keywords     0.000001   0.000001   0.000002 (  0.000001)
-Data - positional     0.000001   0.000000   0.000001 (  0.000002)
+Struct - positional   0.000001   0.000000   0.000001 (  0.000000)
+Struct - keywords     0.000002   0.000000   0.000002 (  0.000001)
+Data - positional     0.000002   0.000000   0.000002 (  0.000002)
 Data - keywords       0.000001   0.000000   0.000001 (  0.000001)
-OpenStruct.new        0.000015   0.000000   0.000015 (  0.000015)
-Custom - positional   0.000001   0.000000   0.000001 (  0.000001)
-Custom - keywords     0.000001   0.000000   0.000001 (  0.000001)
+OpenStruct.new        0.000018   0.000000   0.000018 (  0.000017)
+PORO - positional     0.000001   0.000000   0.000001 (  0.000001)
+PORO - keywords       0.000002   0.000000   0.000002 (  0.000001)
 ```
 
 ### Benchmark with `ips`
@@ -296,30 +471,30 @@ Custom - keywords     0.000001   0.000000   0.000001 (  0.000001)
 Creating a new object - Benchmark with ips - small numbers
 ruby 3.3.0 (2023-12-25 revision 5124f9ac75) [arm64-darwin23]
 Warming up --------------------------------------
- Struct - positional   905.029k i/100ms
-   Struct - keywords   463.944k i/100ms
-   Data - positional   335.454k i/100ms
-     Data - keywords   486.978k i/100ms
-      OpenStruct.new    10.706k i/100ms
- Custom - positional   802.961k i/100ms
-   Custom - keywords   475.091k i/100ms
+ Struct - positional   913.180k i/100ms
+   Struct - keywords   464.416k i/100ms
+   Data - positional   335.700k i/100ms
+     Data - keywords   484.506k i/100ms
+      OpenStruct.new    10.869k i/100ms
+   PORO - positional   796.702k i/100ms
+     PORO - keywords   467.403k i/100ms
 Calculating -------------------------------------
- Struct - positional      8.766M (± 0.1%) i/s -     44.346M in   5.059002s
-   Struct - keywords      4.565M (± 0.3%) i/s -     23.197M in   5.081195s
-   Data - positional      3.332M (± 0.2%) i/s -     16.773M in   5.033458s
-     Data - keywords      4.818M (± 0.2%) i/s -     24.349M in   5.053850s
-      OpenStruct.new    107.602k (± 1.6%) i/s -    546.006k in   5.075550s
- Custom - positional      7.757M (± 0.3%) i/s -     39.345M in   5.072337s
-   Custom - keywords      4.713M (± 0.5%) i/s -     23.755M in   5.040592s
+ Struct - positional      8.924M (± 0.1%) i/s -     44.746M in   5.014174s
+   Struct - keywords      4.583M (± 0.2%) i/s -     23.221M in   5.067154s
+   Data - positional      3.289M (± 0.2%) i/s -     16.449M in   5.001151s
+     Data - keywords      4.786M (± 0.1%) i/s -     24.225M in   5.061479s
+      OpenStruct.new    109.959k (± 1.1%) i/s -    554.319k in   5.041756s
+   PORO - positional      7.791M (± 0.3%) i/s -     39.038M in   5.010537s
+     PORO - keywords      4.659M (± 0.5%) i/s -     23.370M in   5.016246s
 
 Comparison:
- Struct - positional:  8765862.3 i/s
- Custom - positional:  7756859.0 i/s - 1.13x  slower
-     Data - keywords:  4817919.9 i/s - 1.82x  slower
-   Custom - keywords:  4712787.7 i/s - 1.86x  slower
-   Struct - keywords:  4565350.1 i/s - 1.92x  slower
-   Data - positional:  3332250.2 i/s - 2.63x  slower
-      OpenStruct.new:   107602.1 i/s - 81.47x  slower
+ Struct - positional:  8923882.2 i/s
+   PORO - positional:  7791346.2 i/s - 1.15x  slower
+     Data - keywords:  4786215.7 i/s - 1.86x  slower
+     PORO - keywords:  4659024.3 i/s - 1.92x  slower
+   Struct - keywords:  4582626.3 i/s - 1.95x  slower
+   Data - positional:  3289111.1 i/s - 2.71x  slower
+      OpenStruct.new:   109959.0 i/s - 81.16x  slower
 ```
 
 
